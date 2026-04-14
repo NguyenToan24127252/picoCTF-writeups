@@ -10,7 +10,8 @@ Can you run ende.py using password.txt to get flag.txt.en?
 
 ### Note
 - -e (Encode / Encrypt): * Dùng để mã hóa.
-Nếu bạn có một file văn bản bình thường (ví dụ flag.txt) và muốn biến nó thành file đã mã hóa (flag.txt.en), bạn sẽ dùng tham số này.
+    - Nếu bạn có một file văn bản bình thường (ví dụ flag.txt) và muốn biến nó thành file đã mã hóa (flag.txt.en), bạn sẽ dùng tham số này.
+
 
 - -d (Decode / Decrypt): * Dùng để giải mã.
 Đây là lệnh bạn vừa dùng thành công. Nó yêu cầu script chuyển đổi file đã bị mã hóa (.en) quay ngược lại thành văn bản gốc (Flag) bằng cách sử dụng mật khẩu.
