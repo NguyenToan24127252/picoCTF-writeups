@@ -14,7 +14,7 @@ Can you run ende.py using password.txt to get flag.txt.en?
 
 
 - -d (Decode / Decrypt): * Dùng để giải mã.
-Đây là lệnh bạn vừa dùng thành công. Nó yêu cầu script chuyển đổi file đã bị mã hóa (.en) quay ngược lại thành văn bản gốc (Flag) bằng cách sử dụng mật khẩu.
+    - Đây là lệnh bạn vừa dùng thành công. Nó yêu cầu script chuyển đổi file đã bị mã hóa (.en) quay ngược lại thành văn bản gốc (Flag) bằng cách sử dụng mật khẩu.
 
 - -h (Help): * Dùng để trợ giúp.
-Khi bạn gõ python3 ende.py -h, script sẽ in ra một đoạn hướng dẫn ngắn gọn về cách sử dụng, các tham số cần thiết và thứ tự nhập liệu.
+    - Khi bạn gõ python3 ende.py -h, script sẽ in ra một đoạn hướng dẫn ngắn gọn về cách sử dụng, các tham số cần thiết và thứ tự nhập liệu.
