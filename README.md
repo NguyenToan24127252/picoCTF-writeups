@@ -37,10 +37,5 @@ Trong mỗi writeup, mình cố gắng giữ format nhất quán:
 6. Bài học rút ra.
 
 ## Lưu ý
-
 - Repo này phục vụ mục đích học tập và tự tổng hợp kiến thức.
-- Không đăng flag của các challenge đang active nếu điều đó vi phạm quy định cuộc thi.
 
-## Tiến độ
-
-Mình sẽ cập nhật dần writeup theo thời gian trong quá trình học và luyện CTF.
