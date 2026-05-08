@@ -1,7 +1,6 @@
 ### Bài toán
-Description
-Python scripts are invoked kind of like programs in the Terminal...
-Can you run ende.py using password.txt to get flag.txt.en?
+- Description
+    - Python scripts are invoked kind of like programs in the Terminal... Can you run ende.py using password.txt to get flag.txt.en?
 
 ### Giải
 - Dùng lệnh: python3 ende.py -d flag.txt.en 

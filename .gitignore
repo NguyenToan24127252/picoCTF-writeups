@@ -1,0 +1,20 @@
+# Ghidra project files
+*.gpr
+*.rep/
+
+# Ghidra lock files (tránh xung đột khi mở project)
+*.lock
+*.lock~
+
+# Temporary and backup files
+*.bak
+*.tmp
+~*
+
+# Python cache (nếu bạn viết script giải mã trong repo)
+__pycache__/
+*.py[cod]
+
+# OS generated files
+.DS_Store
+Thumbs.db
