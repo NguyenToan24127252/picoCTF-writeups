@@ -38,4 +38,4 @@ Trong mỗi writeup, mình cố gắng giữ format nhất quán:
 
 ## Lưu ý
 - Repo này phục vụ mục đích học tập và tự tổng hợp kiến thức.
-
+- Không đăng flag của các challenge đang active nếu điều đó vi phạm quy định cuộc thi.
