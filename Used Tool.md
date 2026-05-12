@@ -1,6 +1,6 @@
 # CTF used tools
 
-Tổng hợp các công cụ đã cài đặt trên hệ thống Kali Linux nhằm phục vụ mục đích giải các bài toán **CTF**
+Tổng hợp các công cụ đã cài đặt trên Kali Linux nhằm phục vụ mục đích giải các bài toán **CTF**
 ---
 
 ## 1. QEMU (Quick Emulator)
@@ -63,3 +63,17 @@ qemu-aarch64 ./ten_file_binary <doi_so>
 ```bash
     aarch64-linux-gnu-gcc -static file.S -o file_executable
 ```
+
+## 7. Valgrind
+
+* **Định nghĩa:** Là một bộ khung công cụ (instrumentation framework) dùng để giám sát bộ nhớ, phát hiện lỗi và phân tích hiệu năng của chương trình.
+* **Áp dụng:** * **Phát hiện lỗi bộ nhớ:** Tìm kiếm các lỗi như rò rỉ bộ nhớ (memory leaks), truy cập vùng nhớ chưa khởi tạo hoặc tràn bộ nhớ đệm (buffer overflow).
+    * **Tấn công kênh bên (Side-channel/Timing Attack):** Trong CTF (như bài `checkpass`), công cụ `cachegrind` của Valgrind cực kỳ hữu ích để đếm chính xác số lượng lệnh thực thi (**Instruction references - Ir**). Khi bạn đoán đúng một ký tự của flag, chương trình sẽ chạy thêm các lệnh kiểm tra cho ký tự tiếp theo, làm tổng số lệnh tăng vọt, giúp bạn "bẻ" từng ký tự một.
+* **Cách sử dụng:**
+
+```bash
+# Sử dụng công cụ cachegrind để đếm số lệnh thực thi
+valgrind --tool=cachegrind ./ten_file_binary <doi_so>
+
+# Xem báo cáo chi tiết về lỗi bộ nhớ
+valgrind --leak-check=full ./ten_file_binary
