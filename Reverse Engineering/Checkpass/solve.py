@@ -1,93 +1,76 @@
-#!/usr/bin/env python3
+from z3 import *
 
-import r2pipe
+# 1. Khai báo
+input_chars = [BitVec(f'p_{i}', 8) for i in range(32)]
+solver = Solver()
 
-# Offset of each `cmp` instruction that validates a char of the password
-check_offset = [0x5d15, 0x5d42, 0x5d71, 0x5da0, 0x5dcf, 0x5dfc, 0x5e28, 0x5e55, 0x5e82, 0x5eaf, 0x5edc, 0x5f0c, 0x5f3c, 0x5f6c, 0x5f9c, 0x5fcc, 0x5ffc, 0x602c, 0x605c, 0x608c, 0x60bc, 0x60ec, 0x611c, 0x614c, 0x617c, 0x61ac, 0x61dc, 0x620c, 0x623c, 0x626c, 0x629c, 0x62c8]
+for p in input_chars:
+    solver.add(p >= 32, p <= 126)
 
-# Hardcoded bytes that the binary is expecting for each char after the scramble
-expected_byte = [0xe6, 0x1f, 0xf9, 0x74, 0x22, 0x68, 0xf9, 0xc7, 0x8d, 0x22, 0x7b, 0x3a, 0xae, 0x48, 0x31, 0xcb, 0xcb, 0x22, 0x46, 0x5, 0xce, 0x3e, 0xcd, 0x2b, 0x12, 0x20, 0x7b, 0x50, 0x83, 0xb8, 0xcf, 0x7b]
+# 2. Đọc dữ liệu (Đảm bảo File Offset chính xác)
+try:
+    with open("checkpass", "rb") as f:
+        f.seek(0x86f0) # Kiểm tra lại offset này trong Ghidra Listing view
+        sbox_data = list(f.read(1024))
+        f.seek(0x9600)
+        perm_raw = list(f.read(1024))
+except:
+    print("Lỗi đọc file!")
+    exit()
 
-# List of internal registers that holds the result of the scramble for each char
-reg_to_check = ['bl', 'bl', 'sil', 'sil', 'sil', 'cl', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al', 'al']
+# Nạp S-box vào danh sách hằng số Z3 để solver tra cứu
+# [cite: 407-417, 449]
+sbox_const = [BitVecVal(b, 8) for b in sbox_data]
 
+def get_perm_idx(round_num, i):
+    # Mỗi index là ulong (8 bytes) [cite: 140-149]
+    offset = (round_num * 32 + i) * 8
+    return perm_raw[offset]
 
-# Get base address so we can add breakpoints at each offset
-def get_base_address():
-    # Ép radare2 phân tích sâu hơn để tìm các tham chiếu chéo (cross-references)
-    r.cmd('aa') 
-    # Tìm tất cả các vị trí gọi đến địa chỉ 0x54e0
-    list_addr = r.cmdj('axtj 0x54e0')
+# 3. Mô phỏng hàm xử lý [cite: 460-461]
+def sub_54E0(data, round_num):
+    # Bước 1: Substitution (Thay thế từng byte)
+    box_no = round_num * 256
+    # Tra cứu giá trị thực từ sbox_const thay vì dùng Array/Select mơ hồ
+    tmp = []
+    for d in data:
+        # Tạo bảng tra cứu (Lookup table) cho Z3
+        # Đây là cách "ép" Z3 dùng đúng dữ liệu S-box bạn đã đọc
+        lookup = [If(d == j, sbox_const[box_no + j], BitVecVal(0, 8)) for j in range(256)]
+        # Kết hợp các điều kiện If thành một biểu thức duy nhất cho 1 byte
+        res = BitVecVal(0, 8)
+        for val in lookup:
+            res = res | val
+        tmp.append(res)
     
-    if not list_addr or len(list_addr) == 0:
-        # Nếu vẫn không tìm thấy, ta dùng cách thủ công để lấy base từ entrypoint
-        # Thông thường entrypoint của file nằm ở offset 0x54e0 hoặc gần đó
-        entry_info = r.cmdj('ie j')
-        if entry_info:
-            # Lấy địa chỉ ảo trừ đi offset để ra base address
-            return entry_info[0]['vaddr'] & 0xfffffff00000
-        return 0x555555554000 # Giá trị mặc định phổ biến của Linux x64
-        
-    base_addr = list_addr[0]['from']
-    return (base_addr & 0xfffffff00000)
+    # Bước 2: Permutation (Đổi chỗ) [cite: 418-448]
+    output = [None] * 32
+    for i in range(32):
+        src_idx = get_perm_idx(round_num, i)
+        output[i] = tmp[src_idx]
+    return output
 
-def set_breakpoint(offset_i):
-    r.cmd('db-*')                                   # first remove all breakpoints
-    base_addr = get_base_address()
-    check_addr = base_addr | check_offset[offset_i] # set address for `cmp` instruction
-    r.cmd('db ' + str(check_addr))                  # add breakpoint
+# 4. Thực thi 4 vòng [cite: 403-405]
+state = input_chars
+for r in range(4):
+    state = sub_54E0(state, r)
 
-# Run the debugger and return the content of the register that is being validated
-def crack_check(passw, i_offset):
-    print('--------------------')
-    r.cmd('ood picoCTF{' + passw + '}')
-    set_breakpoint(i_offset)
-    
-    r.cmd('dc')                                     # run until breakpoint
-    result = int(r.cmd('dr ' + reg_to_check[i_offset]), 16)
-    print(passw)
-    return (result)
+# 5. Khớp mục tiêu [cite: 450-458, 461]
+targets = {
+    25: 0xe6, 0: 0x1f, 14: 0x3a, 19: 0xcf, 23: 0xd3, 1: 0x01, 29: 0x3a, 27: 0x22,
+    26: 0xcd, 12: 0xd9, 31: 0x7b, 6: 0x3a, 10: 0xae, 15: 0x48, 30: 0x05, 7: 0xcb,
+    11: 0xcb, 5: 0x22, 22: 0x46, 16: 0x05, 21: 0x68, 3: 0x99, 20: 0xcd, 8: 0x0d,
+    28: 0xf9, 13: 0x20, 17: 0x7b, 2: 0x50, 9: 0xcb, 4: 0xb8, 24: 0xcf, 18: 0x7b
+}
 
-# Generates a string replacing the 'i'th char with 'char'
-def gen_passw(passw, i, char):
-    passw_list = list(passw)
-    passw_list[i] = char
-    return ("".join(passw_list))
+for idx, val in targets.items():
+    solver.add(state[idx] == val)
 
-
-
-### Beginning ###
-
-r = r2pipe.open('checkpass', flags=['-2'])  # -2 signifies disable stderr
-r.cmd('aaaa')                               # radare2 command to analyze the code to find the functions
-
-final_passw = 'ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ'        # 32 chars
-i_char_cracked = []                                     # List of chars already cracked
-
-for i in range(32):
-
-    # Part 1: Locate the index of the char to crack
-    print("Searching char to crack:")
-    sample = crack_check(final_passw, i)                # first sample to compare later on
-
-    for i_chr in range(len(final_passw)):
-        if not(i_chr in i_char_cracked):                # don't modify chars already cracked
-            passw = gen_passw(final_passw, i_chr, 'b')  # test password with only one char modified
-            if (crack_check(passw, i) != sample):       # compare with sample to see if the change affected the current password check
-                break
-    
-    print("Index of next char to crack: ", i_chr)
-    print("Brute-forcing char...")
-    
-    # Part 2: brute-force the char
-    for ch_1 in range(48, 125, 1):                      # iterate chars from '0' to '}'
-        passw = gen_passw(final_passw, i_chr, chr(ch_1))
-        if crack_check(passw, i) == expected_byte[i]:
-            print("Cracked char! So far password is: ", passw)
-            break
-    
-    i_char_cracked.append(i_chr)                        # keep track of chars already cracked
-    final_passw = passw                                 # update password to use in the next iteration
-
-print("\n\nFinal Password: ")
-print(passw)
+# 6. Kết quả
+print("[*] Đang giải...")
+if solver.check() == sat:
+    m = solver.model()
+    flag = "".join([chr(m[p].as_long()) for p in input_chars])
+    print(f"\n[+] FLAG TÌM THẤY: picoCTF{{{flag}}}")
+else:
+    print("\n[-] Unsat. Hãy kiểm tra lại File Offset 0x86f0 trong Ghidra!")
