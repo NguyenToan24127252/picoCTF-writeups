@@ -1,11 +1,14 @@
-### Bài toán
+# Bài toán
 - Description
-    - A new modular challenge!
-Download the message here.
-Take each number mod 41 and find the modular inverse for the result. Then map to the following character set: 1-26 are the alphabet, 27-36 are the decimal digits, and 37 is an underscore.
-Wrap your decrypted message in the picoCTF flag format (i.e. picoCTF{decrypted_message})
+    - Can you find the flag?
+shark1.pcapng
 
-### Giải
-- 
-### Note
-- 
+# Giải
+- Dùng bộ lọc tcp.stream eq -> lọc sơ từng stream nhìn nhanh thì thấy stream 5 có chứa phản hồi HTTP 200 OK 
+- Chuột phải vào bất kỳ gói tin nào hiện ra sau khi lọc -> Chọn Follow -> TCP Stream -> một cửa sổ mới sẽ hiện ra hiển thị toàn bộ nội dung trao đổi giữa Client và Server.
+- Thấy Gur synt vf cvpbPGS{c33xno00_1_f33_h_qrnqorrs}
+- Chuỗi trên sử dụng mã hóa ROT13 -> decode => FLAG
+# Note
+- Tìm stream chứa phản hồi HTTP 200 OK
+- Dấu hiệu nhận biết ROT13: Khi thấy cụm cvpbPGS, hãy nhớ ngay nó là picoCTF. Chữ c cách p 13 vị trí, v cách i 13 vị trí... Đây là "mẹo" để nhận diện nhanh loại mã hóa này.
+- Có thể dùng lệnh strings shark1.pcapng | grep "cvpbPGS" để tìm nhanh chuỗi mã hóa mà không cần mở giao diện đồ họa.
