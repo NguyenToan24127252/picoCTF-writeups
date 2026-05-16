@@ -5,7 +5,7 @@ shark1.pcapng
 
 # Giải
 - Đầu tiên dùng statistic (di xuống mục http->requests trong statistics), ta thấy /flag và / trong địa chỉ 18.217.1.57 
-->chèn ảnh statistics vào
+![statistics](statistic.png)
 - Dùng strings:
 ```
 ┌──(kali㉿kali)-[/mnt/hgfs/picoCTF-writeups/Forensics/Wireshark twoo twooo two twoo]
