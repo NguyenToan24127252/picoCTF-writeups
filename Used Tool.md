@@ -248,3 +248,5 @@ icat -o <offset_phan_vung> -s image_o_cung.dd 1425 > slack_data.txt
 2. Tạo một Case mới (`New Case`) và chọn đường dẫn tới file ảnh đĩa cần điều tra (`Add Data Source`).
 3. Lựa chọn các mô-đun phân tích tự động (Ingest Modules) như: *File Type Identification*, *Keyword Search*, *Deleted Files Recovery*.
 4. Duyệt cây thư mục bên trái để kiểm tra kết quả, bấm vào tab `Slack Space` ở khung xem dữ liệu phía dưới để kiểm tra các byte dữ liệu ẩn giấu cuối Cluster của file.
+
+viết tiếp tool sstv
