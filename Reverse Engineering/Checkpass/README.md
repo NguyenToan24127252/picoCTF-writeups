@@ -139,7 +139,7 @@ targets = { 25: 0xe6, 0: 0x1f, ... }
 3. **Ràng buộc:** Sau 4 vòng, kết quả tại mỗi vị trí phải khớp với từ điển `targets`.
 4. **Giải mã:** Z3 sử dụng thuật toán giải hệ phương trình để tìm ngược lại 32 giá trị ban đầu thỏa mãn mọi điều kiện trên.
 
-**Kết quả:** Khi chạy lệnh `solver.check()`, nếu tìm thấy kết quả (`sat`), script sẽ in ra flag có dạng `picoCTF{...}`.
+**Kết quả:** Khi chạy lệnh `solver.check()`, nếu tìm thấy kết quả (`sat`), script sẽ in ra flag có dạng `picoCTF{...}`. ->Nhưng mà flag vẫn còn sai sẽ làm tiếp trong tương lai :(((((
 
 # Note
 ### 1. Dấu hiệu nhận biết thuật toán (Pattern Recognition)
