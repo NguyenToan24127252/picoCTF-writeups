@@ -130,3 +130,5 @@ Bản đồ khôi phục flag từ dữ liệu trích xuất của 3 file sẽ n
 | `flag[6]` đến `flag[9]` | `m1[1]` đến `m1[4]` | Giữ nguyên |
 | `flag[10]` đến `flag[14]` | `m3[3]` đến `m3[7]` | Giữ nguyên |
 | `flag[15]` đến `flag[25]` | `m1[5]` đến `m1[15]` | Giữ nguyên |
+
+- Chạy script => FLAG
