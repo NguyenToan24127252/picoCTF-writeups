@@ -2,6 +2,7 @@
 
 Tổng hợp các công cụ và thư viện hữu ích đã cài đặt trên Kali Linux nhằm phục vụ mục đích giải các bài toán **CTF**
 ---
+# A. CÁC CÔNG CỤ
 
 ## 1. QEMU (Quick Emulator)
 
@@ -11,8 +12,9 @@ Tổng hợp các công cụ và thư viện hữu ích đã cài đặt trên K
 ```bash
 # Chạy file thực thi ARM64
 qemu-aarch64 ./ten_file_binary <doi_so>
-
 ```
+---
+
 ## 2. Ghidra
 
 * **Định nghĩa:** Một bộ khung công cụ dịch ngược mã nguồn (Reverse Engineering Framework) được phát triển bởi NSA.
@@ -21,6 +23,8 @@ qemu-aarch64 ./ten_file_binary <doi_so>
 1. Gõ `ghidra` trong terminal để mở giao diện GUI.
 2. Tạo Project mới và Import file cần phân tích.
 3. Nhấn vào biểu tượng con rồng để bắt đầu "Auto Analyze".
+
+---
 
 ## 3. GDB (GNU Debugger)
 
@@ -35,6 +39,8 @@ qemu-aarch64 ./ten_file_binary <doi_so>
     (gdb) info registers # Xem giá trị các thanh ghi
 ```
 
+---
+
 ## 4. Pwntools
 *   **Định nghĩa:** Một thư viện Python cực mạnh được thiết kế dành riêng cho việc viết script khai thác lỗ hổng.
 *   **Áp dụng:** Dùng để tự động hóa việc tương tác với chương trình (Local/Remote), chuyển đổi dữ liệu (Endianness), tạo shellcode, hoặc tìm kiếm địa chỉ hàm (ROP).
@@ -45,6 +51,7 @@ qemu-aarch64 ./ten_file_binary <doi_so>
     p.sendline(b'A' * 32)
     print(p.recvall())
 ```
+---
 
 ## 5. Checksec
 *   **Định nghĩa:** Một công cụ kiểm tra các cơ chế bảo mật được tích hợp trong file binary.
@@ -53,6 +60,8 @@ qemu-aarch64 ./ten_file_binary <doi_so>
     ```bash
     checksec --file=ten_file
     ```
+
+---
 
 ## 6. Bộ công cụ Biên dịch chéo (Cross-Compile Toolchain)
 *   **Thành phần:** `gcc-aarch64-linux-gnu`, `libc6-dev-arm64-cross`.
@@ -63,6 +72,8 @@ qemu-aarch64 ./ten_file_binary <doi_so>
 ```bash
     aarch64-linux-gnu-gcc -static file.S -o file_executable
 ```
+
+---
 
 ## 7. Valgrind
 
@@ -78,6 +89,8 @@ valgrind --tool=cachegrind ./ten_file_binary <doi_so>
 # Xem báo cáo chi tiết về lỗi bộ nhớ
 valgrind --leak-check=full ./ten_file_binary
 ```
+---
+
 ## 8. Radare2 (r2)
 
 * **Định nghĩa:** Là một khung làm việc (framework) mã nguồn mở cực kỳ mạnh mẽ cho việc dịch ngược và phân tích mã máy thông qua dòng lệnh.
@@ -90,8 +103,9 @@ valgrind --leak-check=full ./ten_file_binary
     (r2) afl               # Liệt kê tất cả các hàm (analyze functions list)
     (r2) pdf @main         # In mã máy của hàm main (print disassembly function)
     (r2) vv                # Mở giao diện đồ họa dạng khối (Visual Mode)
-
 ```
+
+---
 
 ## 9. Z3-Solver
 
@@ -107,8 +121,9 @@ valgrind --leak-check=full ./ten_file_binary
     s.add(x + y == 10, x > 2, y < 5) # Thêm các điều kiện
     if s.check() == sat:            # Kiểm tra xem có nghiệm không
         print(s.model())            # In ra kết quả
-
 ```
+
+---
 
 ## 10. Wireshark & Tshark
 
@@ -118,19 +133,17 @@ valgrind --leak-check=full ./ten_file_binary
 * **Wireshark:** Gõ `wireshark file.pcap` để mở giao diện GUI, sau đó dùng các bộ lọc như `http`, `tcp.stream eq 5`, hoặc `dns`.
 * **Tshark:** Dùng để trích xuất nhanh dữ liệu mà không cần mở GUI.
 
-
-
 ```bash
     # Trích xuất tất cả các giá trị của một trường cụ thể trong file pcap
     tshark -r file.pcap -T fields -e http.user_agent
 ```
+---
 
 ## 11. Binwalk
 
 * **Định nghĩa:** Là một công cụ dòng lệnh chuyên dụng để phân tích, tìm kiếm và trích xuất các tệp tin ẩn hoặc mã thực thi được nhúng bên trong một tệp tin khác dựa trên chữ ký tệp tin (Magic Bytes).
 * **Áp dụng:** Cực kỳ phổ biến trong mảng **Forensics**, **Steganography** và **Firmware Analysis**. Khi bạn có một file ảnh đĩa, file firmware router, hoặc thậm chí là một file ảnh `.png` nhưng dung lượng lớn bất thường, Binwalk sẽ quét xem có file `.zip`, `.tar`, hoặc ảnh khác bị nối/giấu ở phía sau hay không.
 * **Cách sử dụng:**
-
 ```bash
 # Kiểm tra cấu trúc và các file bị ẩn bên trong
 binwalk file_nghi_van.png
@@ -140,15 +153,15 @@ binwalk -e file_nghi_van.png
 
 # Quét sâu và hiển thị biểu đồ entropy để phát hiện vùng dữ liệu bị mã hóa/nén
 binwalk -E file_nghi_van.png
-
 ```
+
+---
 
 ## 12. Exiftool
 
 * **Định nghĩa:** Là một thư viện và ứng dụng dòng lệnh độc lập viết bằng Perl, chuyên dùng để đọc, ghi và sửa đổi thông tin siêu dữ liệu (Metadata/EXIF) của hàng loạt định dạng tệp tin như hình ảnh, âm thanh, video và tài liệu.
 * **Áp dụng:** Dùng trong các bài toán **Forensics**, **OSINT** hoặc **Steganography** sơ cấp. Tác giả đề bài thường giấu Flag hoặc gợi ý quan trọng bên trong các trường thông tin ẩn của file như: Tọa độ GPS nơi chụp ảnh, Tên tác giả (Artist), Nhận xét (Comment), Ngày tạo (Create Date) hoặc phần mềm được dùng để chỉnh sửa.
 * **Cách sử dụng:**
-
 ```bash
 # Hiển thị toàn bộ thông tin Metadata của một file
 exiftool anh_chuyen_an.jpg
@@ -159,8 +172,8 @@ exiftool -GPSPosition anh_chuyen_an.jpg
 
 # Xóa toàn bộ Metadata của một file để xóa dấu vết
 exiftool -all= anh_chuyen_an.jpg
-
 ```
+---
 
 ## 13. Steghide
 
@@ -177,8 +190,9 @@ steghide extract -sf file_goc.jpg
 
 # Nhúng một file bí mật (secret.txt) vào file ảnh gốc (cover.jpg)
 steghide embed -cf cover.jpg -ef secret.txt -p "mat_khau_bao_mat"
-
 ```
+
+---
 
 ## 14. Stegcracker
 
@@ -195,6 +209,7 @@ stegcracker file_bi_an.jpg /usr/share/wordlists/rockyou.txt
 stegseek file_bi_an.jpg /usr/share/wordlists/rockyou.txt
 
 ```
+---
 
 ## 15. Volatility
 
@@ -214,8 +229,8 @@ vol -f dump_ram.raw windows.cmdline
 
 # Kết xuất (Dump) toàn bộ file của một tiến trình nghi vấn để phân tích sâu hơn
 vol -f dump_ram.raw -o ./output windows.dumpfiles --pid <PID_tien_trinh>
-
 ```
+---
 
 ## 16. Bộ Sleuth Kit (TSK)
 
@@ -237,6 +252,7 @@ istat -o <offset_phan_vung> image_o_cung.dd 1425
 icat -o <offset_phan_vung> -s image_o_cung.dd 1425 > slack_data.txt
 
 ```
+---
 
 ## 17. Autopsy
 
@@ -280,3 +296,54 @@ sstv --list-modes
 ```
 
 > **Mẹo nâng cao cho giải CTF:** Nếu file `.wav` của đề bài có quá nhiều tạp âm (noise) khiến công cụ `sstv` không thể đọc được và trả về lỗi, hãy dùng phần mềm **Audacity** (hoặc lệnh `sox`) trên Kali để lọc nhiễu (Noise Reduction), chuẩn hóa âm lượng (Normalize) về mức `-1dB`, sau đó chạy lại lệnh `sstv` ở trên để lấy ảnh rõ nét nhất.
+
+Dưới đây là nội dung mục **B. CÁCH ÁP DỤNG** được đúc kết từ cẩm nang các công cụ trên, giúp bạn định hình nhanh phản xạ: **"Nhìn thấy loại file/dấu hiệu này $\rightarrow$ bật ngay công cụ đó"** khi thực chiến CTF.
+
+---
+
+# B. CÁCH ÁP DỤNG ĐỐI VỚI TỪNG DẠNG BÀI
+### 1. Khi gặp File thực thi hoặc Mã máy (Binary / Assembly / Source Code)
+
+* **File `.S` (Mã nguồn Assembly của các kiến trúc lạ như ARM, MIPS):**
+$\rightarrow$ Sử dụng **Bộ công cụ Biên dịch chéo (Cross-Compile Toolchain)** để biên dịch file `.S` thành file thực thi `.elf`.
+* **File thực thi kiến trúc không phải x86 (ARM, MIPS, AArch64...):**
+$\rightarrow$ Sử dụng **QEMU** để chạy giả lập file binary đó ngay trên Kali Linux.
+* **Mọi file thực thi (Linux ELF, Windows EXE) thuộc bài Pwn/Reverse:**
+$\rightarrow$ Việc đầu tiên là chạy **Checksec** để kiểm tra các lớp bảo vệ (NX, Canary, PIE), từ đó biết được chương trình có thể bị tấn công bằng kỹ thuật nào (với dụ: tắt NX thì có thể dùng Shellcode, bật NX thì phải dùng ROP).
+* **Cần phân tích thuật toán, logic ngầm của File thực thi (Static Analysis):**
+$\rightarrow$ Ném file vào **Ghidra** để dịch ngược ra mã giả C cho dễ đọc. Nếu cần check nhanh chuỗi ký tự, cấu trúc hàm trực tiếp trên Terminal thì dùng **Radare2 (r2)**.
+* **Cần debug chạy thử, xem thanh ghi, thay đổi luồng thực thi (Dynamic Analysis):**
+$\rightarrow$ Chạy file bằng **GDB** (kết hợp với các giao diện như GEF/Pwndbg) để đặt các điểm dừng (breakpoint).
+* **Cần viết Script tự động gửi payload khai thác (Local/Remote):**
+$\rightarrow$ Sử dụng thư viện **Pwntools** trong Python để quản lý kết nối và đóng gói dữ liệu cấu trúc lớn.
+* **Bài toán cho một chương trình kiểm tra mật khẩu (Checkpass/Validator) rất dài:**
+$\rightarrow$ Hãy dùng **Valgrind (Cachegrind)** để đo số lượng lệnh thực thi `Ir`. Nếu số lệnh tăng lên khi bạn thay đổi một ký tự, chứng tỏ ký tự đó đã đúng (Tấn công kênh bên - Timing Attack).
+
+### 2. Khi gặp Hệ phương trình hoặc Logic toán phức tạp (Crypto / Reverse)
+
+* **Logic chương trình chứa hàng chục điều kiện ràng buộc giữa các ký tự của Flag:**
+$\rightarrow$ Đừng giải tay hay viết vòng lặp brute-force mất thời gian. Hãy nạp toàn bộ các điều kiện toán học đó vào **Z3-Solver** bằng Python để nó tự giải và trả về Flag chính xác.
+
+### 3. Khi gặp File Lưu lượng mạng (Network Forensics)
+
+* **File mở rộng `.pcap`, `.pcapng`:**
+$\rightarrow$ Sử dụng **Wireshark** (Giao diện GUI) để lọc gói tin, theo dõi các luồng TCP stream. Nếu file dung lượng quá lớn hoặc cần viết script cào dữ liệu tự động (như lấy toàn bộ chuỗi User-Agent), hãy dùng **Tshark** trên Terminal.
+
+### 4. Khi gặp File dữ liệu ẩn giấu (Forensics / Steganography)
+
+* **Một file bất kỳ (Ảnh, Nhạc, Tài liệu) có dung lượng lớn bất thường hoặc nghi ngờ bị giấu hàng:**
+$\rightarrow$ Dùng **Binwalk** để quét các chữ ký tệp tin (Magic Bytes). Nếu phát hiện có file ẩn bên trong (như một file `.zip` nằm cuối file `.png`), dùng lệnh `binwalk -e` để trích xuất ra.
+* **File ảnh (`.jpg`, `.png`), file âm thanh hoặc tài liệu thông thường:**
+$\rightarrow$ Chạy **Exiftool** để kiểm tra toàn bộ Metadata. Đôi khi tác giả giấu Flag ngay trong các trường thông tin như `Comment`, `Artist`, hoặc tọa độ `GPS`.
+* **File ảnh `.jpg`, `.bmp` hoặc file âm thanh `.wav` nghi có mật khẩu:**
+$\rightarrow$ Sử dụng **Steghide** để kiểm tra cấu trúc ẩn hoặc trích xuất file bí mật. Nếu đề bài yêu cầu Passphrase nhưng không cho, hãy dùng **Stegcracker** (hoặc **Stegseek**) kết hợp với danh sách từ điển `rockyou.txt` để bẻ khóa.
+* **File âm thanh `.wav` chứa các tiếng "bíp, rít" rè rè kỳ lạ:**
+$\rightarrow$ Đây là định dạng truyền hình quét chậm. Sử dụng công cụ **SSTV** (Python) để giải mã trực tiếp file âm thanh đó thành file ảnh chứa Flag trên màn hình terminal.
+
+### 5. Khi gặp File cấu trúc hệ thống (Disk / Memory Forensics)
+
+* **File Dump bộ nhớ RAM (`.raw`, `.vmem`, `.dmp`):**
+$\rightarrow$ Sử dụng **Volatility** để dựng lại lịch sử máy tính: kiểm tra các câu lệnh cmd đã gõ, các tiến trình đang chạy ngầm hoặc trích xuất các file nằm trong bộ nhớ cache của RAM.
+* **File ảnh đĩa, phân vùng ổ cứng (`.dd`, `.raw`, `.e01`):**
+$\rightarrow$ Sử dụng **Bộ Sleuth Kit (TSK)** trên Terminal để phân tích sâu ở tầng thấp (kiểm tra bảng phân vùng bằng `mmls`, tìm file xóa bằng `fls`, trích xuất vùng khoảng trống `Slack Space` bằng `icat`).
+$\rightarrow$ Nếu muốn có giao diện trực quan, quản lý ca điều tra theo dạng nhấp chuột và tự động phân loại hình ảnh/từ khóa, hãy import file ảnh đĩa đó vào **Autopsy**.
