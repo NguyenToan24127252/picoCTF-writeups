@@ -137,6 +137,138 @@ valgrind --leak-check=full ./ten_file_binary
     # Trích xuất tất cả các giá trị của một trường cụ thể trong file pcap
     tshark -r file.pcap -T fields -e http.user_agent
 ```
+### 1. Các lệnh lọc (Display Filters) dùng để làm gì?
+
+Trong Wireshark, ô nhập lệnh ở trên cùng gọi là **Display Filter**. Khác với bộ lọc lúc bắt gói tin (Capture Filter), bộ lọc này giúp ta ẩn đi các gói tin không cần thiết và chỉ giữ lại những gì ta muốn phân tích.
+
+Dưới đây là các lệnh cơ bản nhưng cực kỳ quan trọng chia theo mục đích:
+
+#### Lọc theo Giao thức (Protocol)
+
+* `ip`: Chỉ hiển thị các gói tin sử dụng giao thức IPv4.
+* `ipv6`: Chỉ hiển thị các gói tin sử dụng giao thức IPv6.
+* `tcp`: Chỉ hiển thị các gói tin TCP (thường dùng để xem bắt tay 3 bước, truyền dữ liệu web, v.v.).
+* `udp`: Chỉ hiển thị các gói tin UDP (DNS, streaming, v.v.).
+* `dns`: Chỉ hiển thị các gói tin phân giải tên miền DNS.
+* `http`: Chỉ hiển thị các gói tin HTTP (web truyền thống không mã hóa, rất thích hợp để tìm flag hoặc thông tin nhạy cảm trong các bài CTF).
+* `tls`: Chỉ hiển thị các lưu lượng mạng đã mã hóa (HTTPS/TLS).
+
+#### Lọc theo Địa chỉ IP (IP Address)
+
+* `ip.addr == 192.168.1.1`: Hiển thị tất cả các gói tin đi **từ** hoặc đi **đến** địa chỉ IP này.
+* `ip.src == 192.168.1.50`: Chỉ hiển thị các gói tin có nguồn phát (Source) từ IP này.
+* `ip.dst == 10.0.0.1`: Chỉ hiển thị các gói tin có đích đến (Destination) là IP này.
+
+#### Lọc theo Cổng (Port)
+
+* `tcp.port == 80`: Lọc toàn bộ lưu lượng TCP chạy qua cổng 80 (HTTP).
+* `udp.port == 53`: Lọc toàn bộ lưu lượng UDP chạy qua cổng 53 (DNS).
+* `tcp.srcport == 443`: Lọc các gói tin TCP có cổng nguồn là 443 (HTTPS).
+
+#### Kết hợp các lệnh (Logic Operators)
+
+ta có thể kết hợp nhiều điều kiện lại với nhau bằng các toán tử logic:
+
+* `and` (hoặc `&&`): Thỏa mãn cả hai.
+* *Ví dụ:* `ip.src == 192.168.1.50 and tcp.port == 80` (Tìm gói tin từ IP này gửi đến web qua cổng 80).
+
+
+* `or` (hoặc `||`): Thỏa mãn một trong hai.
+* *Ví dụ:* `http or dns` (Hiển thị cả gói tin HTTP và DNS).
+
+
+* `not` (hoặc `!`): Loại trừ gói tin đó.
+* *Ví dụ:* `not arp` (Ẩn hết các gói tin ARP quảng bá trong mạng để đỡ rối mắt).
+---
+
+### 2. Các thao tác cơ bản trên Wireshark (Cho Analyst)
+
+Khi mở một file PCAP lên, giao diện Wireshark sẽ chia làm 3 phần chính từ trên xuống dưới: **Packet List** (Danh sách gói tin), **Packet Details** (Chi tiết các tầng network của gói tin được chọn), và **Packet Bytes** (Mã Hex và ký tự dạng thô).
+
+Dưới đây là các thao tác ta cần nắm nằm lòng khi làm analyst:
+
+#### Thao tác 1: Follow Stream (Theo dõi dòng chảy hội thoại)
+
+Đây là tính năng "gối đầu giường" của mọi analyst. Thay vì đọc từng gói tin đơn lẻ, tính năng này sẽ ghép nối tất cả các gói tin liên quan lại thành một đoạn hội thoại hoàn chỉnh giữa Client và Server.
+
+1. **Click chuột phải** vào một gói tin TCP hoặc HTTP bất kỳ mà ta nghi ngờ.
+2. Chọn **Follow** -> **TCP Stream** (hoặc HTTP Stream).
+3. Một cửa sổ mới hiện ra:
+* Chữ màu **đỏ**: Dữ liệu do Client gửi đi.
+* Chữ màu **xanh dương**: Dữ liệu do Server phản hồi.
+* Ta có thể đọc trực tiếp text ở đây (nếu là HTTP) để tìm thông tin như mật khẩu, nội dung chat, flag, v.v.
+
+
+
+#### Thao tác 2: Tìm kiếm dữ liệu bên trong gói tin (Find Packet)
+
+Khi file PCAP quá lớn và ta muốn tìm một từ khóa cụ thể (ví dụ: "password", "flag", "admin"):
+
+1. Nhấn tổ hợp phím `Ctrl + F`.
+2. Một thanh công cụ tìm kiếm nhỏ sẽ xuất hiện phía trên danh sách gói tin.
+3. **Quan trọng:** Ở ô tùy chọn đầu tiên, hãy chuyển từ **Display Filter** sang **String** (Chuỗi ký tự) hoặc **Packet bytes**.
+4. Ở ô tiếp theo, chọn **Case sensitive** nếu muốn phân biệt chữ hoa chữ thường.
+5. Nhập từ khóa cần tìm vào ô trống và nhấn **Find**. Wireshark sẽ tự động nhảy đến gói tin chứa chuỗi đó.
+
+#### Thao tác 3: Xem thống kê tổng quan (Statistics)
+
+#### 1. Protocol Hierarchy (Kiến trúc phân cấp giao thức)
+
+Thao tác này cho ta biết file PCAP này chứa những loại lưu lượng mạng nào và tỷ lệ của chúng là bao nhiêu.
+
+**Đường dẫn:** `Statistics` -> `Protocol Hierarchy`
+
+Khi bảng này hiện lên, ta sẽ thấy một cấu trúc hình cây (tầng sau thụt lề vào so với tầng trước) mô phỏng mô hình OSI từ tầng dưới lên tầng trên.
+
+##### Các cột chỉ số cần nhìn vào:
+
+* **Protocol:** Tên giao thức (ví dụ: Ethernet -> IP -> TCP -> HTTP).
+* **% Packets / Packets:** Tỷ lệ phần trăm và số lượng gói tin của giao thức đó trên tổng số gói tin bắt được.
+* **% Bytes / Bytes:** Tỷ lệ phần trăm và dung lượng dữ liệu. Cột này cực kỳ quan trọng vì có những giao thức số lượng gói tin rất ít nhưng dung lượng lại cực kỳ nặng (như file download).
+
+##### Cách analyst "đọc vị" bất thường từ Protocol Hierarchy:
+
+* **Dấu hiệu bị Quét cổng (Port Scanning / Reconnaissance):** Nếu ta thấy tỷ lệ gói tin **TCP** cực kỳ cao (ví dụ >90%), nhưng khi nhìn xuống nhánh con **HTTP, TLS hay SSH** thì số lượng gói tin lại gần như bằng 0. Điều này có nghĩa là có ai đó đang gửi hàng loạt gói tin TCP bắt tay (SYN) để dò port chứ không hề có hoạt động giao tiếp thực tế nào.
+* **Dấu hiệu bị Tấn công từ chối dịch vụ (DDoS / Flood):** Nếu tự dưng nhánh **UDP** hoặc **ICMP** (lệnh ping) chiếm tỷ trọng áp đảo một cách vô lý (ví dụ 80-90% traffic mạng), khả năng cao hệ thống đang hứng chịu một đợt UDP Flood hoặc ICMP Ping Flood.
+* **Dấu hiệu Dữ liệu bị rò rỉ (Data Exfiltration):** Nếu ta thấy giao thức **DNS** chiếm lượng `Bytes` lớn bất thường. Bình thường DNS chỉ để phân giải tên miền nên gói tin rất nhẹ. Nếu dung lượng DNS lên tới vài chục MB hoặc cả GB, chắc chắn kẻ tấn công đang dùng kỹ thuật *DNS Tunneling* để tuồn dữ liệu bí mật ra ngoài.
+
+---
+
+#### 2. Endpoints (Các điểm cuối trong mạng)
+
+Nếu *Protocol Hierarchy* cho biết **"Đang có chuyện gì xảy ra"**, thì *Endpoints* sẽ chỉ thẳng mặt **"Ai là người làm việc đó"**. Nó liệt kê tất cả các thiết bị (IP, MAC Address) có phát sinh lưu lượng trong file PCAP.
+
+**Đường dẫn:** `Statistics` -> `Endpoints`
+
+Trong cửa sổ này, ta cần chuyển qua các tab phù hợp với mục đích phân tích: **Ethernet** (địa chỉ MAC), **IPv4** (IP nguồn/đích), **TCP** hoặc **UDP** (IP kèm số Port cụ thể).
+
+##### Các cột chỉ số cần nhìn vào (nhấp vào tên cột để sắp xếp tăng/giảm dần):
+
+* **Address:** Địa chỉ IP hoặc MAC của thiết bị.
+* **Packets / Bytes:** Tổng số lượng gói tin và dung lượng mà thiết bị này đã xử lý (bao gồm cả gửi và nhận).
+* **Tx Packets / Tx Bytes (Transmit):** Lượng dữ liệu mà IP này **gửi đi**.
+* **Rx Packets / Rx Bytes (Receive):** Lượng dữ liệu mà IP này **nhận về**.
+
+##### Cách analyst "đọc vị" bất thường từ Endpoints:
+
+* **Tìm máy nạn nhân hoặc máy tấn công chính:** Hãy ấn sắp xếp cột `Bytes` hoặc `Packets` theo thứ tự giảm dần. Thiết bị đứng đầu danh sách với lượng traffic vượt trội so với phần còn lại chính là "nhân vật chính" của file PCAP (có thể là máy chủ đang bị dập, máy user đang cắm đầu tải file độc hại, hoặc IP của hacker).
+* **Phát hiện rải mã độc/Quét mạng (Network Scanning):** Ở tab **IPv4**, nếu ta thấy một IP nội bộ có số lượng `Packets` gửi đi (`Tx Packets`) rất lớn, nhưng lượng nhận về (`Rx Packets`) lại cực kỳ ít, và khi chuyển sang tab **TCP** ta thấy IP đó đang kết nối tới hàng nghìn địa chỉ IP khác nhau, thì đích thị máy này đã dính mã độc và đang tự động quét toàn bộ dải mạng để lây lan sang máy khác.
+* **Phát hiện hành vi trộm dữ liệu:** Nếu một IP có lượng `Tx Bytes` (dữ liệu đẩy lên mạng) lớn bất thường so với thói quen hàng ngày của một user, hãy kiểm tra ngay xem nó đang đẩy dữ liệu đi đâu.
+
+---
+
+> 💡 **Tuyệt chiêu chuột phải từ hai bảng này:**
+> Khi ta lướt hai bảng trên và phát hiện ra một Giao thức lạ hoặc một IP đáng nghi, **đừng tắt bảng đi rồi gõ lệnh lọc thủ công**.
+> Hãy **click chuột phải** thẳng vào IP hoặc Giao thức đó -> chọn **Apply as Filter** -> **Selected**. Wireshark sẽ tự động điền lệnh lọc ra màn hình chính cho ta. Cực kỳ nhanh và không lo gõ sai cú pháp!
+
+#### Thao tác 4: Trích xuất file được truyền trong mạng (Export Objects)
+
+Nếu kẻ tấn công hoặc người dùng tải một file nào đó về (file ảnh, file exe độc hại, file zip...) qua giao thức không mã hóa như HTTP:
+
+1. Chọn **File** -> **Export Objects** -> **HTTP...**
+2. Wireshark sẽ liệt kê toàn bộ các file mà nó "bắt" được từ các luồng web.
+3. Ta chỉ cần chọn file muốn kiểm tra và nhấn **Save** để lưu file đó về máy tính của mình để tiến hành phân tích sâu hơn (ví dụ: check MD5/SHA256, ném vào VirusTotal).
+
 ---
 
 ## 11. Binwalk
