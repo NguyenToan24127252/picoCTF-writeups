@@ -7,7 +7,7 @@
 
 - Tên bài toán **"B1g_Mac"** gợi ý trực tiếp đến thuật ngữ **MAC times** (Modification, Access, Creation) — hệ thống mốc thời gian lưu trữ của tập tin trên phân vùng NTFS của Windows.
 
-Khi thực hiện phân tích tĩnh (Static Analysis) file thực thi `main.exe` bằng Ghidra, chúng ta phát hiện chương trình sử dụng các hàm Windows API (`GetFileTime`, `SetFileTime`) để can thiệp vào cấu trúc `FILETIME` 64-bit của các file ảnh trong thư mục `test`. Thay vì giấu tin trong dữ liệu ảnh (Steganography), tác giả đã ẩn giấu các byte của Flag trực tiếp vào **phần nano giây (các byte thấp `dwLowDateTime`)** của mốc thời gian tập tin nhằm tránh sự phát hiện của các lệnh liệt kê thông thường trên Linux.
+- Khi thực hiện phân tích tĩnh (Static Analysis) file thực thi `main.exe` bằng Ghidra, chúng ta phát hiện chương trình sử dụng các hàm Windows API (`GetFileTime`, `SetFileTime`) để can thiệp vào cấu trúc `FILETIME` 64-bit của các file ảnh trong thư mục `test`. Thay vì giấu tin trong dữ liệu ảnh (Steganography), tác giả đã ẩn giấu các byte của Flag trực tiếp vào **phần nano giây (các byte thấp `dwLowDateTime`)** của mốc thời gian tập tin nhằm tránh sự phát hiện của các lệnh liệt kê thông thường trên Linux.
 
 - Ta sẽ analyze các hàm trong file main.exe
 
@@ -195,32 +195,46 @@ void __cdecl decodeBytes(LPCSTR param_1)
   return;
 }
 ```
----
-## Giải pháp
-- Do môi trường hệ điều hành Linux hiển thị và làm tròn các mốc thời gian thô của hệ thống file Windows (NTFS FILETIME) khác nhau, việc đọc trực tiếp bằng mắt qua lệnh `ls` hay `exiftool` thông thường sẽ làm mất đi các byte dữ liệu ở phần đuôi nano giây.
+## Giải pháp 
+- Qua phân tích mã nguồn bằng Ghidra, chúng ta nhận thấy hàm `decodeBytes` chỉ thực hiện bóc tách dữ liệu từ mốc thời gian thô rồi ghi vào một vùng đệm bộ nhớ trống (`_buff`) chứ bản thân nó hoàn toàn không có lệnh in kết quả (`printf` hay `puts`).
 
-- Để giải quyết bài toán này, ta sẽ tận dụng hàm giải mã bằng Binary Patching 
+- Đoạn mã chịu trách nhiệm gọi tiến trình giải mã xen kẽ và thực hiện in Flag ra màn hình Console thực chất nằm ở một hàm ẩn, hoàn toàn không được gọi từ `main`, mang tên **`_decode`** (địa chỉ bộ nhớ tại `00401afe`):
 
-- Vì hàm `decodeBytes` đã được viết sẵn bên trong cấu trúc file nhị phân nhưng không được gọi, chúng ta sẽ tiến hành thay đổi luồng thực thi (Patch) trực tiếp mã máy của file `main.exe`.
-
-- Mục tiêu là đổi lệnh gán `local_14 = 0` thành `local_14 = 1` trong hàm `main`. Cụm mã máy tương ứng `\xc7\x45\xec\x00\x00\x00\x00` (gán bằng 0) sẽ được thay thế bằng `\xc7\x45\xec\x01\x00\x00\x00` (gán bằng 1).
-
-Thực hiện chuỗi lệnh sau trên Kali Linux terminal:
-
-```bash
-# 1. Tạo bản sao để thực hiện chỉnh sửa
-cp main.exe main_patch.exe
-
-# 2. Sử dụng công cụ sed để ghi đè cấu trúc opcode mã máy
-sed -i 's/\xc7\x45\xec\x00\x00\x00\x00/\xc7\x45\xec\x01\x00\x00\x00/g' main_patch.exe
-
-# 3. Tạo một file flag.txt ảo để chương trình không bị crash điều kiện kiểm tra
-echo "123456789012345678" > flag.txt
-
-# 4. Thực thi file đã patch thông qua Wine (Lớp tương thích Windows trên Linux)
-wine main_patch.exe
+```c
+void _decode(void)
+{
+  // ... (Khởi tạo con trỏ vùng đệm)
+  _buff_size = 0x12;
+  _buff = &local_24;
+  _buff_index = &local_28;
+  
+  _listdir(1, _folderName);               // Gọi listdir ở chế độ giải mã (param_1 = 1)
+  printf("value of DECODE %s \n", _buff); // Lệnh xuất Flag nằm tại đây
+  puts("Wait for 5 seconds to exit.");
+  _sleep(5);
+  exit(0);
+}
 ```
-**Kết quả:** File `main_patch.exe` ép buộc luồng xử lý chạy trực tiếp vào hàm `decodeBytes`. Nó sẽ tự động trích xuất các mốc thời gian NTFS thô chính xác của chuỗi các file `.bmp` và in/nhả trực tiếp ra Flag chính xác đúng định dạng mong muốn.
 
-# Note
-- 
+- Tuy nhiên, do các cơ chế bảo vệ vùng nhớ Stack của các hệ điều hành Windows hiện đại (hoặc lớp tương thích Wine trên Linux) rất nghiêm ngặt, việc sử dụng các kỹ thuật can thiệp vào thanh ghi để bẻ lái luồng thực thi (`EIP Hijacking`) nhảy ngang hông vào hàm `_decode` rất dễ dẫn đến hiện tượng crash ngầm (tiến trình bị hủy bởi `NtTerminateProcess` trước khi kịp in kết quả).
+
+- Do đó, phương pháp Forensics tối ưu, ổn định và tự động hóa cao nhất là viết một **Script Python chạy trực tiếp trên Windows** để tương tác với hệ thống file.
+
+### Bước 1: Khôi phục hiện trạng dữ liệu gốc
+
+- Vì mốc thời gian nano giây của tệp tin có thể đã bị thay đổi hoặc ghi đè trong các lần chạy thử nghiệm trước đó, việc làm sạch và giải nén lại phân vùng là bắt buộc:
+
+1. Xóa thư mục lỗi cũ: `rmdir /s /q test`
+2. Sử dụng phần mềm **7-Zip** hoặc **WinRAR** giải nén lại tệp tin `b1g_mac.zip`.
+
+> *Lưu ý:* Tuyệt đối không sử dụng trình giải nén mặc định của Linux (`unzip`) hoặc tính năng "Extract All" mặc định của Windows vì các công cụ này thường làm tròn mốc thời gian về dạng giây (`.0000000`), làm mất hoàn toàn cấu trúc dữ liệu của Flag.
+
+### Bước 2: Xây dựng Script trích xuất tự động (`solve.py`)
+
+- Tạo một file tên là `solve.py` nằm ngay cạnh thư mục `test` và file `main.exe` với nội dung sử dụng thư viện `ctypes` để gọi trực tiếp Windows API => chạy script => FLAG
+
+# Note 
+
+* **Kỹ thuật Giấu tin Anti-Forensics (Timestomp):** Bài toán minh họa một phương thức ẩn giấu dữ liệu vô hình đối với các bộ lọc thông thường. Windows hiển thị thời gian ở giao diện ngoài chỉ tới đơn vị Giờ:Phút:Giây, nhưng cấu trúc `FILETIME` trên phân vùng **NTFS** có độ phân giải thực tế lên đến **100 nanosecond**. Tác giả đã tận dụng các bit dư thừa ở hàng đơn vị nano giây siêu nhỏ này để nhét các ký tự ASCII của Flag vào.
+* **Bẫy môi trường và Hệ thống tệp tin (NTFS vs ext4):** Hệ thống file của Linux (như ext4) quản lý mốc thời gian theo chuẩn Unix Epoch (tính từ năm 1970), khác hoàn toàn với NTFS của Windows (tính từ năm 1601). Quá trình giải nén thông thường trên Linux sẽ thực hiện phép toán chuyển đổi mốc thời gian, vô tình làm sai lệch hoặc cắt cụt (làm tròn) các byte ở đuôi nano giây, trực tiếp phá hủy Flag. Do đó các bài toán dạng MAC times bắt buộc phải được xử lý trên môi trường Windows gốc hoặc các công cụ bảo toàn thuộc tính như `7z`.
+* **Thứ tự duyệt file (Directory Indexing):** Hàm `FindFirstFileA` / `FindNextFileA` của Windows quét thư mục dựa trên cấu trúc bảng chỉ mục B-tree của NTFS, dẫn đến việc các file có đuôi ` - Copy.bmp` được đẩy lên đọc trước. Sự khác biệt này khiến việc sử dụng các hàm liệt kê thư mục mặc định của Linux (`os.listdir`) trả về sai trình tự, làm các ký tự của chuỗi Flag bị đảo lộn cấu trúc.
