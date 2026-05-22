@@ -431,6 +431,34 @@ sstv --list-modes
 
 Dưới đây là nội dung mục **B. CÁCH ÁP DỤNG** được đúc kết từ cẩm nang các công cụ trên, giúp bạn định hình nhanh phản xạ: **"Nhìn thấy loại file/dấu hiệu này $\rightarrow$ bật ngay công cụ đó"** khi thực chiến CTF.
 
+## 19. Apktool
+
+* **Định nghĩa:** Là một công cụ dòng lệnh chuyên dụng dùng để dịch ngược một file ứng dụng Android (`.apk`) về dạng gần như nguyên bản của nó trước khi đóng gói, đồng thời có khả năng build lại file sau khi chỉnh sửa.
+* **Áp dụng:** Phục vụ cho mảng **Mobile / Android Reverse Engineering**. Do các file cấu hình giao diện mạng (`.xml`) trong APK đã bị Google biên dịch thành dạng nhị phân mã hóa (Binary XML), Apktool được dùng để giải mã đống Binary XML đó về dạng văn bản thô đọc được, đồng thời chuyển đổi file thực thi Java (`.dex`) về dạng hợp ngữ của Android (**Smali code**).
+* **Cách sử dụng:**
+
+```bash
+# 1. Bung (Decode) file APK ra một thư mục để phân tích cấu trúc và file XML
+apktool d androidrev.apk -o output_folder
+
+# 2. Đóng gói (Build) lại thư mục đã sửa đổi thành một file APK mới 
+apktool b output_folder -o patched_app.apk
+
+# Lưu ý: APK sau khi build lại bằng Apktool bắt buộc phải được ký (Sign) bằng 
+# công cụ 'apksigner' hoặc 'jarsigner' thì mới có thể cài đặt được trên máy ảo/máy thật.
+```
+---
+
+## 20. JADX / JADX-GUI
+
+* **Định nghĩa:** Là một bộ công cụ dịch ngược (Decompiler) mã nguồn mở mạnh mẽ, cho phép chuyển đổi trực tiếp các file thực thi nhị phân của Android (`.apk`, `.dex`, `.jar`, `.aar`) ngược trở lại thành mã nguồn Java/Kotlin hoàn chỉnh.
+* **Áp dụng:** Công cụ "quốc dân" bắt buộc phải có cho mảng **Mobile / Android RE**. JADX-GUI cung cấp giao diện đồ họa trực quan giúp bạn đọc hiểu logic giải thuật của app một cách mượt mà nhất. Nó sở hữu các tính năng thực chiến cực mạnh như: **Find Usage** (truy vết xem hàm/biến này được gọi ở đâu), thanh tìm kiếm chuỗi (Text/String search) trên toàn bộ project, và tính năng **Deobfuscate** (tự động đổi tên các hàm/biến bị hacker làm rối `a, b, c` thành tên dễ nhìn).
+* **Cách sử dụng:**
+
+1. Gõ `jadx-gui` trong Terminal để mở giao diện đồ họa.
+2. Kéo thả trực tiếp file `.apk` hoặc `.dex` vào màn hình JADX-GUI.
+3. Sử dụng tổ hợp phím `Ctrl + Shift + F` để mở thanh tìm kiếm toàn dự án, hoặc chuột phải vào một hàm chọn `Find Usage` để trace ngược luồng xử lý.
+
 ---
 
 # B. CÁCH ÁP DỤNG ĐỐI VỚI TỪNG DẠNG BÀI
@@ -479,3 +507,14 @@ $\rightarrow$ Sử dụng **Volatility** để dựng lại lịch sử máy tí
 * **File ảnh đĩa, phân vùng ổ cứng (`.dd`, `.raw`, `.e01`):**
 $\rightarrow$ Sử dụng **Bộ Sleuth Kit (TSK)** trên Terminal để phân tích sâu ở tầng thấp (kiểm tra bảng phân vùng bằng `mmls`, tìm file xóa bằng `fls`, trích xuất vùng khoảng trống `Slack Space` bằng `icat`).
 $\rightarrow$ Nếu muốn có giao diện trực quan, quản lý ca điều tra theo dạng nhấp chuột và tự động phân loại hình ảnh/từ khóa, hãy import file ảnh đĩa đó vào **Autopsy**.
+
+### 6. Khi gặp File ứng dụng Android (Mobile / Reverse Engineering)
+
+* **Nhận được một file ứng dụng dạng `.apk` hoặc file thực thi `.dex`:**
+$\rightarrow$ Ngay lập tức mở **JADX-GUI** (`jadx-gui file.apk`) lên để đọc mã nguồn Java/Kotlin. Đây là cách nhanh nhất để nắm được bức tranh tổng thể và thuật toán kiểm tra của bài toán.
+* **Cần tìm kiếm nhanh cờ (Flag format), các chuỗi hardcoded, hoặc URL ẩn giấu trong App:**
+$\rightarrow$ Trong giao diện **JADX-GUI**, nhấn tổ hợp `Ctrl + Shift + F` nhập từ khóa của giải đấu (như `flag{`, `HCMUS-CTF`). Nếu muốn quét thô bằng dòng lệnh, hãy chạy `apktool d file.apk` trước, sau đó dùng lệnh `grep -rni "flag" output_folder/` để lục lọi mọi ngóc ngách của thư mục vừa bung.
+* **Phát hiện cấu trúc Flag bị bẻ nhỏ ra so sánh, hoặc logic so sánh bị tác giả đảo ngược (Honeypot/Anti-Analysis):**
+$\rightarrow$ Đọc kỹ file tài nguyên cấu hình `output_folder/res/values/strings.xml` được trích xuất từ **Apktool** để lấy các chuỗi mục tiêu. Sau đó, viết một script **Python (kết hợp thư viện `hashlib` hoặc `itertools`)** mô phỏng lại đúng các hàm ràng buộc logic từ code Java của JADX nhằm brute-force hoặc giải mã ngược các phân đoạn flag.
+* **Cần can thiệp vào mã nguồn, sửa đổi logic kiểm tra (Patching App) để ép app trả về True:**
+$\rightarrow$ Dùng **Apktool** để rã file APK ra thành code **Smali**. Tìm đến file `.smali` chứa hàm kiểm tra (ví dụ: `FlagChecker.smali`), sửa câu lệnh nhảy điều kiện (như sửa `if-eqz` thành `if-nez` hoặc ép hàm return `const/4 v0, 0x1`), sau đó dùng lệnh `apktool b` để đóng gói lại thành APK mới nhằm bypass lớp bảo vệ.
