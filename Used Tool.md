@@ -518,3 +518,35 @@ $\rightarrow$ Trong giao diện **JADX-GUI**, nhấn tổ hợp `Ctrl + Shift + 
 $\rightarrow$ Đọc kỹ file tài nguyên cấu hình `output_folder/res/values/strings.xml` được trích xuất từ **Apktool** để lấy các chuỗi mục tiêu. Sau đó, viết một script **Python (kết hợp thư viện `hashlib` hoặc `itertools`)** mô phỏng lại đúng các hàm ràng buộc logic từ code Java của JADX nhằm brute-force hoặc giải mã ngược các phân đoạn flag.
 * **Cần can thiệp vào mã nguồn, sửa đổi logic kiểm tra (Patching App) để ép app trả về True:**
 $\rightarrow$ Dùng **Apktool** để rã file APK ra thành code **Smali**. Tìm đến file `.smali` chứa hàm kiểm tra (ví dụ: `FlagChecker.smali`), sửa câu lệnh nhảy điều kiện (như sửa `if-eqz` thành `if-nez` hoặc ép hàm return `const/4 v0, 0x1`), sau đó dùng lệnh `apktool b` để đóng gói lại thành APK mới nhằm bypass lớp bảo vệ.
+
+### 7. Khi gặp File Tài liệu Văn phòng (Office Document Forensics)
+
+* **File tài liệu có đuôi kết thúc bằng chữ "x" hoặc "m" (.docx, .xlsx, .pptx, .docm, .xlsm, .pptm):**
+$\rightarrow$ Việc đầu tiên cần làm là đổi đuôi file sang .zip (hoặc dùng lệnh unzip ten_file.docx -d output_folder) để rã cấu trúc **Office Open XML (OOXML)** bên trong ra thành các thư mục chứa file XML và tài nguyên thô.
+* **Cần tìm nhanh Flag dạng text ẩn, chuỗi Base64 hoặc từ khóa bị làm rối (Obfuscated):**
+$\rightarrow$ Sau khi giải nén file ZIP, di chuyển vào thư mục và chạy lệnh quét đệ quy:
+
+```bash
+grep -rni "pico" .
+```
+
+Nếu tác giả dùng bẫy chèn khoảng trống giữa các ký tự để né grep (ví dụ: p i c o), hãy dùng lệnh find kết hợp loại bỏ khoảng trắng:
+
+```bash
+find . -type f -exec cat {} + | tr -d ' ' | grep -i "pico"
+```
+
+* **Cần lùng sục các "tọa độ" giấu hàng kinh điển của tài liệu Office:**
+* **Trong Word (.docx):** Kiểm tra file word/document.xml (chứa toàn bộ văn bản thô, hãy tìm các đoạn text có thuộc tính ẩn <w:vanish/> hoặc màu chữ trùng màu nền).
+* **Trong Excel (.xlsx):** Kiểm tra file xl/sharedStrings.xml (nơi gom toàn bộ chữ của các sheet) và thư mục xl/worksheets/ để tìm các cột/hàng bị tác giả ẩn (visible="false" hoặc hidden="1").
+* **Trong PowerPoint (.pptx/.pptm):** Kiểm tra kỹ thư mục ppt/slideMasters/ (nơi chứa slide cấu trúc nền, rất hay bị nhét file rác ẩn như file hidden) và thư mục ppt/slides/.
+* **Mọi file Office:** Luôn check thư mục docProps/ (chứa file core.xml, app.xml) để xem Flag có bị giấu trong Metadata như tên tác giả (Creator), thẻ phân loại (Tags), hoặc phần nhận xét (Comments) hay không.
+
+
+* **File tài liệu chứa tài nguyên đa phương tiện (Hình ảnh, âm thanh nhúng bên trong):**
+$\rightarrow$ Truy cập thẳng vào các thư mục word/media/, xl/media/, hoặc ppt/media/. Tại đây, kiểm tra xem các file ảnh có dung lượng lớn bất thường không để tiếp tục lồng ghép kỹ thuật **Steganography** (ném qua binwalk, exiftool hoặc steghide).
+* **File có đuôi chứa chữ "m" (.docm, .xlsm, .pptm) báo hiệu có chứa mã Macro (VBA):**
+$\rightarrow$ Sử dụng bộ công cụ **oletools** (đặc biệt là lệnh olevba) để trích xuất và phân tích mã nguồn VBA ẩn trong file nhị phân vbaProject.bin. Nếu code bị làm rối nặng, tiến hành phân tích thuật toán gán biến, đảo chuỗi hoặc XOR để giải mã ra Flag.
+* **File văn phòng định dạng cũ (.doc, .xls, .ppt từ phiên bản Office 2003 trở về trước):**
+$\rightarrow$ **KHÔNG** đổi đuôi sang .zip vì đây là cấu trúc nhị phân OLE2. Hãy dùng công cụ dòng lệnh oleid ten_file.doc để kiểm tra tổng quan các thành phần ẩn, sau đó dùng oledump.py hoặc olevba để bóc tách luồng dữ liệu bên trong.
+
